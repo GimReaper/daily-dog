@@ -1,6 +1,6 @@
 import { ActivityHandler, MessageFactory } from 'botbuilder';
 
-export class EchoBot extends ActivityHandler {
+export class DailyDogBot extends ActivityHandler {
     constructor() {
         super();
         this.onMessage(async (context, next) => {
