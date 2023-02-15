@@ -1,14 +1,25 @@
 import { ActivityHandler, MessageFactory, Attachment } from 'botbuilder';
+const RedditImageFetcher = require("reddit-image-fetcher");
 
 export class DailyDogBot extends ActivityHandler {
     constructor() {
         super();
         this.onMessage(async (context, next) => {
-            // TODO get an dog picture.
+            // get an dog picture.
+            const redditInfo = await RedditImageFetcher.fetch({
+                type: 'custom',
+                total: 1, 
+                subreddit: ['PuppySmiles', 'Cutedogsreddit'],
+                allowNSFW: false
+            });
+
+            const imageUrl = redditInfo[0].image;
+            const lastIdx = imageUrl.lastIndexOf(".");
+            const imageType = "image/" + imageUrl.slice(lastIdx + 1 );
 
             const image: Attachment = {
-                contentType: "image/jpg",
-                contentUrl: "https://media.istockphoto.com/id/467923438/photo/silly-dog-tilts-head-in-front-of-barn.jpg?s=612x612&w=0&k=20&c=haPwfoPl_ggvNKAga_Qv4r88qWdcpH-qZ5DaBba6-8U=",
+                contentType: imageType,
+                contentUrl: imageUrl,
             };
             // Message Factory doesn't have a .image(),, but it dose have an .attachemnt() so maybe that's what we want.
             const message = MessageFactory.attachment(image);
