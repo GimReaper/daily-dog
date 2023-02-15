@@ -13,7 +13,8 @@ import { INodeSocket } from 'botframework-streaming';
 import {
     CloudAdapter,
     ConfigurationBotFrameworkAuthentication,
-    ConfigurationBotFrameworkAuthenticationOptions
+    ConfigurationBotFrameworkAuthenticationOptions,
+    TurnContext,
 } from 'botbuilder';
 
 // This bot's main dialog.
@@ -35,7 +36,7 @@ const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication(p
 const adapter = new CloudAdapter(botFrameworkAuthentication);
 
 // Catch-all for errors.
-const onTurnErrorHandler = async (context, error) => {
+const onTurnErrorHandler = async (context: TurnContext, error: Error) => {
     // This check writes out errors to console log .vs. app insights.
     // NOTE: In production environment, you should consider logging this to Azure
     //       application insights.
