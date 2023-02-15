@@ -62,18 +62,18 @@ adapter.onTurnError = onTurnErrorHandler;
 const myBot = new DailyDogBot();
 
 // Listen for incoming requests.
-server.post('/api/messages', async (req, res) => {
+server.post('/api/messages', async (request, response) => {
     // Route received a request to adapter for processing
-    await adapter.process(req, res, (context) => myBot.run(context));
+    await adapter.process(request, response, (context) => myBot.run(context));
 });
 
 // Listen for Upgrade requests for Streaming.
-server.on('upgrade', async (req, socket, head) => {
+server.on('upgrade', async (request, socket, head) => {
     // Create an adapter scoped to this WebSocket connection to allow storing session data.
     const streamingAdapter = new CloudAdapter(botFrameworkAuthentication);
 
     // Set onTurnError for the CloudAdapter created for each connection.
     streamingAdapter.onTurnError = onTurnErrorHandler;
 
-    await streamingAdapter.process(req, socket as unknown as INodeSocket, head, (context) => myBot.run(context));
+    await streamingAdapter.process(request, socket as unknown as INodeSocket, head, (context) => myBot.run(context));
 });

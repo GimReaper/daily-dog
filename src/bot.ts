@@ -1,5 +1,5 @@
 import { ActivityHandler, MessageFactory, Attachment } from 'botbuilder';
-const RedditImageFetcher = require("reddit-image-fetcher");
+import RedditImageFetcher from "reddit-image-fetcher";
 
 export class DailyDogBot extends ActivityHandler {
     constructor() {
@@ -21,7 +21,7 @@ export class DailyDogBot extends ActivityHandler {
                 contentType: imageType,
                 contentUrl: imageUrl,
             };
-            // Message Factory doesn't have a .image(),, but it dose have an .attachemnt() so maybe that's what we want.
+
             const message = MessageFactory.attachment(image);
             await context.sendActivity(message);
             // By calling next() you ensure that the next BotHandler is run.
