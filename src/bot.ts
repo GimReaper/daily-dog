@@ -31,14 +31,27 @@ export class DailyDogBot extends ActivityHandler {
         // TODO: Store new users so that we can later send them dogs everyday.
         // this.onMembersAdded(async (context, next) => {
         //     const membersAdded = context.activity.membersAdded;
-        //     const welcomeText = 'Hello and welcome!';
-        //     for (const member of membersAdded) {
-        //         if (member.id !== context.activity.recipient.id) {
-        //             await context.sendActivity(MessageFactory.text(welcomeText, welcomeText));
-        //         }
-        //     }
-        //     // By calling next() you ensure that the next BotHandler is run.
+        //     peopleList.push(membersAdded);
         //     await next();
         // });
+        
+        const millisecond = 1;
+        const second = 1000 * millisecond;
+        const minute = 60 * second;
+        const hour = 60 * minute;
+        const day = 24 * hour;
+        function sendDogMessages() {
+
+            // TODO send messages
+            // for(people of peopleList){
+                
+            // }
+
+            // inside so that is gets called again and again...
+            setInterval(sendDogMessages, day);
+        }
+
+        sendDogMessages();
     }
 }
+
