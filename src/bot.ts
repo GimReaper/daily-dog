@@ -38,7 +38,7 @@ export class DailyDogBot extends ActivityHandler {
             if (activityText === "cat mode" || activityText == "dog mode") {
                 conversation.isCatMode = activityText === "cat mode";
                 const modeMessage = `${MODE_MESSAGE} ${activityText}`
-                await context.sendActivity(MessageFactory.text(modeMessage, modeMessage));
+                await context.sendActivity(modeMessage);
             }
             else {
                 await this.sendImage(context, conversation.isCatMode);
@@ -48,11 +48,17 @@ export class DailyDogBot extends ActivityHandler {
         });
 
         // TODO: Store new users so that we can later send them dogs everyday.
-        // this.onMembersAdded(async (context, next) => {
-        //     const membersAdded = context.activity.membersAdded;
-        //     peopleList.push(membersAdded);
-        //     await next();
-        // });
+        this.onMembersAdded(async (context, next) => {
+            const membersAdded = context.activity.membersAdded;
+            for (const member of membersAdded) {
+                if (member.id !== context.activity.recipient.id) {
+                    const welcomeMessage = 'Welcome to the daily dog bot! To switch to cat mode, type "cat mode". To switch back to dog mode, type "dog mode" in the chat.';
+                    await context.sendActivity(welcomeMessage);
+                }
+            }
+
+            await next();
+        });
     }
 
     public async sendImage(context: TurnContext, isCatMode: boolean) {
