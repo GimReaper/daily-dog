@@ -1,4 +1,13 @@
-import { ActivityHandler, MessageFactory, Attachment } from 'botbuilder';
+import {
+    ActivityHandler,
+    MessageFactory,
+    Attachment,
+    ConversationState,
+    UserState,
+    TurnContext,
+} from 'botbuilder';
+
+// they messed up their .d.ts or exports, so we have to use require
 const RedditImageFetcher = require("reddit-image-fetcher");
 
 const CONVERSATION_DATA_PROPERTY = 'conversationData';
@@ -6,26 +15,28 @@ const USER_PROFILE_PROPERTY = 'userProfile';
 const DOG_SUBREDDITS = ['PuppySmiles', 'Cutedogsreddit'];
 const CAT_SUBREDDITS = ['Thisismylifemeow', 'IllegallySmolCats', 'catpics'];
 const MODE_MESSAGE = "You are in ";
+const millisecond = 1;
+const second = 1000 * millisecond;
+const minute = 60 * second;
+const hour = 60 * minute;
+const day = 24 * hour;
+
+type ConversationData = {isCatMode: boolean};
 
 export class DailyDogBot extends ActivityHandler {
-    conversationDataAccessor: any;
-    userProfileAccessor: any;
-    conversationState: any;
-    userState: any;
-    constructor(conversationState, userState) {
+    constructor(
+        private conversationState: ConversationState,
+        private userState: UserState,
+    ) {
         super();
-        // Create the state property accessors for the conversation data and user profile.
-        this.conversationDataAccessor = conversationState.createProperty(CONVERSATION_DATA_PROPERTY);
-        this.userProfileAccessor = userState.createProperty(USER_PROFILE_PROPERTY);
-
-        // The state management objects for the conversation and user state.
-        this.conversationState = conversationState;
-        this.userState = userState;
+        // Create the state property accessors for the conversation data and uer profile.
+        const conversationDataAccessor = conversationState.createProperty<ConversationData>(CONVERSATION_DATA_PROPERTY);
+        const userProfileAccessor = userState.createProperty(USER_PROFILE_PROPERTY);
         
         this.onMessage(async (context, next) => {
             // Get the state properties from the turn context.
-            const userProfile = await this.userProfileAccessor.get(context, {});
-            const conversationData = await this.conversationDataAccessor.get(context, {isCatMode: false});
+            const userProfile = await userProfileAccessor.get(context, {});
+            const conversationData = await conversationDataAccessor.get(context, {isCatMode: false});
             const activityText = context.activity.text.toLowerCase();
             if (activityText === "cat mode" || activityText == "dog mode") {
                 conversationData.isCatMode = activityText === "cat mode";
@@ -64,12 +75,7 @@ export class DailyDogBot extends ActivityHandler {
         //     peopleList.push(membersAdded);
         //     await next();
         // });
-        
-        const millisecond = 1;
-        const second = 1000 * millisecond;
-        const minute = 60 * second;
-        const hour = 60 * minute;
-        const day = 24 * hour;
+
         function sendDogMessages() {
 
             // TODO send messages
@@ -84,7 +90,7 @@ export class DailyDogBot extends ActivityHandler {
         sendDogMessages();
     }
     
-    async run(context) {
+    async run(context: TurnContext) {
         await super.run(context);
 
         // Save any state changes. The load happened during the execution of the Dialog.
