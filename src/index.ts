@@ -15,6 +15,9 @@ import {
     ConfigurationBotFrameworkAuthentication,
     ConfigurationBotFrameworkAuthenticationOptions,
     TurnContext,
+    MemoryStorage,
+    ConversationState, 
+    UserState,
 } from 'botbuilder';
 
 // This bot's main dialog.
@@ -58,8 +61,14 @@ const onTurnErrorHandler = async (context: TurnContext, error: Error) => {
 // Set the onTurnError for the singleton CloudAdapter.
 adapter.onTurnError = onTurnErrorHandler;
 
+const memoryStorage = new MemoryStorage();
+
+// Create conversation and user state with in-memory storage provider.
+const conversationState = new ConversationState(memoryStorage);
+const userState = new UserState(memoryStorage);
+
 // Create the main dialog.
-const myBot = new DailyDogBot();
+const myBot = new DailyDogBot(conversationState, userState);
 
 // Listen for incoming requests.
 server.post('/api/messages', async (request, response) => {

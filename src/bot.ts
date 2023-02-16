@@ -1,29 +1,59 @@
 import { ActivityHandler, MessageFactory, Attachment } from 'botbuilder';
-import RedditImageFetcher from "reddit-image-fetcher";
+const RedditImageFetcher = require("reddit-image-fetcher");
+
+const CONVERSATION_DATA_PROPERTY = 'conversationData';
+const USER_PROFILE_PROPERTY = 'userProfile';
+const DOG_SUBREDDITS = ['PuppySmiles', 'Cutedogsreddit'];
+const CAT_SUBREDDITS = ['Thisismylifemeow', 'IllegallySmolCats', 'catpics'];
+const MODE_MESSAGE = "You are in ";
 
 export class DailyDogBot extends ActivityHandler {
-    constructor() {
+    conversationDataAccessor: any;
+    userProfileAccessor: any;
+    conversationState: any;
+    userState: any;
+    constructor(conversationState, userState) {
         super();
+        // Create the state property accessors for the conversation data and user profile.
+        this.conversationDataAccessor = conversationState.createProperty(CONVERSATION_DATA_PROPERTY);
+        this.userProfileAccessor = userState.createProperty(USER_PROFILE_PROPERTY);
+
+        // The state management objects for the conversation and user state.
+        this.conversationState = conversationState;
+        this.userState = userState;
+        
         this.onMessage(async (context, next) => {
-            // get an dog picture.
-            const redditInfo = await RedditImageFetcher.fetch({
-                type: 'custom',
-                total: 1, 
-                subreddit: ['PuppySmiles', 'Cutedogsreddit'],
-                allowNSFW: false
-            });
+            // Get the state properties from the turn context.
+            const userProfile = await this.userProfileAccessor.get(context, {});
+            const conversationData = await this.conversationDataAccessor.get(context, {isCatMode: false});
+            const activityText = context.activity.text.toLowerCase();
+            if (activityText === "cat mode" || activityText == "dog mode") {
+                conversationData.isCatMode = activityText === "cat mode";
+                const modeMessage = `${MODE_MESSAGE} ${activityText}`
+                await context.sendActivity(MessageFactory.text(modeMessage, modeMessage));
+            }
+            else {
+                const source_subreddits = conversationData.isCatMode ? CAT_SUBREDDITS : DOG_SUBREDDITS;
+                // get an dog picture.
+                const redditInfo = await RedditImageFetcher.fetch({
+                    type: 'custom',
+                    total: 1, 
+                    subreddit: source_subreddits,
+                    allowNSFW: false
+                });
 
-            const imageUrl = redditInfo[0].image;
-            const lastIdx = imageUrl.lastIndexOf(".");
-            const imageType = "image/" + imageUrl.slice(lastIdx + 1 );
+                const imageUrl = redditInfo[0].image;
+                const lastIdx = imageUrl.lastIndexOf(".");
+                const imageType = "image/" + imageUrl.slice(lastIdx + 1 );
 
-            const image: Attachment = {
-                contentType: imageType,
-                contentUrl: imageUrl,
-            };
+                const image: Attachment = {
+                    contentType: imageType,
+                    contentUrl: imageUrl,
+                };
 
-            const message = MessageFactory.attachment(image);
-            await context.sendActivity(message);
+                const message = MessageFactory.attachment(image);
+                await context.sendActivity(message);
+            }
             // By calling next() you ensure that the next BotHandler is run.
             await next();
         });
@@ -53,5 +83,14 @@ export class DailyDogBot extends ActivityHandler {
 
         sendDogMessages();
     }
+    
+    async run(context) {
+        await super.run(context);
+
+        // Save any state changes. The load happened during the execution of the Dialog.
+        await this.conversationState.saveChanges(context, false);
+        await this.userState.saveChanges(context, false);
+    }
+    
 }
 
