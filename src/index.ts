@@ -15,13 +15,10 @@ import {
     ConfigurationBotFrameworkAuthentication,
     ConfigurationBotFrameworkAuthenticationOptions,
     TurnContext,
-    MemoryStorage,
-    ConversationState, 
-    UserState,
 } from 'botbuilder';
 
 // This bot's main dialog.
-import { DailyDogBot } from './bot';
+import { DailyDogBot, Conversation } from './bot';
 
 // Create HTTP server.
 const server = restify.createServer();
@@ -61,14 +58,11 @@ const onTurnErrorHandler = async (context: TurnContext, error: Error) => {
 // Set the onTurnError for the singleton CloudAdapter.
 adapter.onTurnError = onTurnErrorHandler;
 
-const memoryStorage = new MemoryStorage();
-
-// Create conversation and user state with in-memory storage provider.
-const conversationState = new ConversationState(memoryStorage);
-const userState = new UserState(memoryStorage);
+// TODO seralize stored data on shutdown, deseralize on startup.
+const storedConversations = new Map<string, Conversation>();
 
 // Create the main dialog.
-const myBot = new DailyDogBot(conversationState, userState);
+const myBot = new DailyDogBot(storedConversations);
 
 // Listen for incoming requests.
 server.post('/api/messages', async (request, response) => {
@@ -86,3 +80,17 @@ server.on('upgrade', async (request, socket, head) => {
 
     await streamingAdapter.process(request, socket as unknown as INodeSocket, head, (context) => myBot.run(context));
 });
+
+const millisecond = 1;
+const second = 1000 * millisecond;
+const minute = 60 * second;
+const hour = 60 * minute;
+const day = 24 * hour;
+function sendScheduledMessages() {
+    for(const conversation of storedConversations.values()) {
+        adapter.continueConversationAsync(process.env.MicrosoftAppId, conversation.reference, async (context) => {
+            await myBot.sendImage(context, conversation.isCatMode);
+        });
+    }
+}
+setInterval(sendScheduledMessages, day);
