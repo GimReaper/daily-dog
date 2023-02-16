@@ -2,68 +2,46 @@ import {
     ActivityHandler,
     MessageFactory,
     Attachment,
-    ConversationState,
-    UserState,
     TurnContext,
+    ConversationReference
 } from 'botbuilder';
 
 // they messed up their .d.ts or exports, so we have to use require
 const RedditImageFetcher = require("reddit-image-fetcher");
 
-const CONVERSATION_DATA_PROPERTY = 'conversationData';
-const USER_PROFILE_PROPERTY = 'userProfile';
 const DOG_SUBREDDITS = ['PuppySmiles', 'Cutedogsreddit'];
 const CAT_SUBREDDITS = ['Thisismylifemeow', 'IllegallySmolCats', 'catpics'];
 const MODE_MESSAGE = "You are in ";
-const millisecond = 1;
-const second = 1000 * millisecond;
-const minute = 60 * second;
-const hour = 60 * minute;
-const day = 24 * hour;
 
-type ConversationData = {isCatMode: boolean};
+export type Conversation = {
+    isCatMode: boolean,
+    reference: Partial<ConversationReference>
+};
 
 export class DailyDogBot extends ActivityHandler {
     constructor(
-        private conversationState: ConversationState,
-        private userState: UserState,
+        storedConversations: Map<string, Conversation>,
     ) {
         super();
-        // Create the state property accessors for the conversation data and uer profile.
-        const conversationDataAccessor = conversationState.createProperty<ConversationData>(CONVERSATION_DATA_PROPERTY);
-        const userProfileAccessor = userState.createProperty(USER_PROFILE_PROPERTY);
-        
+
         this.onMessage(async (context, next) => {
-            // Get the state properties from the turn context.
-            const userProfile = await userProfileAccessor.get(context, {});
-            const conversationData = await conversationDataAccessor.get(context, {isCatMode: false});
+            const reference = TurnContext.getConversationReference(context.activity);
+            const conversationId = reference.conversation.id;
+
+            if (! storedConversations.has(conversationId)) {
+                const newConversation: Conversation = {isCatMode: false, reference: reference};
+                storedConversations.set(conversationId, newConversation);
+            }
+
+            const conversation = storedConversations.get(conversationId);
             const activityText = context.activity.text.toLowerCase();
             if (activityText === "cat mode" || activityText == "dog mode") {
-                conversationData.isCatMode = activityText === "cat mode";
+                conversation.isCatMode = activityText === "cat mode";
                 const modeMessage = `${MODE_MESSAGE} ${activityText}`
                 await context.sendActivity(modeMessage);
             }
             else {
-                const source_subreddits = conversationData.isCatMode ? CAT_SUBREDDITS : DOG_SUBREDDITS;
-                // get an dog or cat picture.
-                const redditInfo = await RedditImageFetcher.fetch({
-                    type: 'custom',
-                    total: 1, 
-                    subreddit: source_subreddits,
-                    allowNSFW: false
-                });
-
-                const imageUrl = redditInfo[0].image;
-                const lastIdx = imageUrl.lastIndexOf(".");
-                const imageType = "image/" + imageUrl.slice(lastIdx + 1 );
-
-                const image: Attachment = {
-                    contentType: imageType,
-                    contentUrl: imageUrl,
-                };
-
-                const message = MessageFactory.attachment(image);
-                await context.sendActivity(message);
+                await this.sendImage(context, conversation.isCatMode);
             }
             // By calling next() you ensure that the next BotHandler is run.
             await next();
@@ -81,28 +59,29 @@ export class DailyDogBot extends ActivityHandler {
 
             await next();
         });
-
-        function sendDogMessages() {
-
-            // TODO send messages
-            // for(people of peopleList){
-                
-            // }
-
-            // inside so that is gets called again and again...
-            setInterval(sendDogMessages, day);
-        }
-
-        sendDogMessages();
     }
-    
-    async run(context: TurnContext) {
-        await super.run(context);
 
-        // Save any state changes. The load happened during the execution of the Dialog.
-        await this.conversationState.saveChanges(context, false);
-        await this.userState.saveChanges(context, false);
+    public async sendImage(context: TurnContext, isCatMode: boolean) {
+        const source_subreddits = isCatMode ? CAT_SUBREDDITS : DOG_SUBREDDITS;
+        // get an dog picture.
+        const redditInfo = await RedditImageFetcher.fetch({
+            type: 'custom',
+            total: 1, 
+            subreddit: source_subreddits,
+            allowNSFW: false
+        });
+
+        const imageUrl = redditInfo[0].image;
+        const lastIdx = imageUrl.lastIndexOf(".");
+        const imageType = "image/" + imageUrl.slice(lastIdx + 1 );
+
+        const image: Attachment = {
+            contentType: imageType,
+            contentUrl: imageUrl,
+        };
+
+        const message = MessageFactory.attachment(image);
+        await context.sendActivity(message);
     }
-    
 }
 
