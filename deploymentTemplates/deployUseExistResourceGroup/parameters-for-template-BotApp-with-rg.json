@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "appServiceName": {
-      "value": ""
+      "value": "daily-dog-web-app"
     },
     "existingAppServicePlanName": {
       "value": ""
@@ -12,10 +12,10 @@
       "value": ""
     },
     "newAppServicePlanName": {
-      "value": ""
+      "value": "ASP-dailydogresourcegroup-901e"
     },
     "newAppServicePlanLocation": {
-      "value": ""
+      "value": "West US"
     },
     "newAppServicePlanSku": {
       "value": {
@@ -30,10 +30,10 @@
       "value": "MultiTenant"
     },
     "appId": {
-      "value": ""
+      "value": "3022313b-772b-4cf3-b09f-726b93d0bc92"
     },
     "appSecret": {
-      "value": ""
+      "value": "dzo8Q~4uf9X2gkg2qT3CeLeVQp7mhxxR3ThY0bvC"
     },
     "UMSIName": {
       "value": ""

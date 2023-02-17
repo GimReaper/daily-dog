@@ -132,7 +132,7 @@
       "comments": "Create a new App Service Plan if no existing App Service Plan name was passed in.",
       "type": "Microsoft.Web/serverfarms",
       "condition": "[not(variables('useExistingServicePlan'))]",
-      "name": "[variables('servicePlanName')]",
+      "name": "[parameters('newAppServicePlanName')]",
       "apiVersion": "2018-02-01",
       "location": "[parameters('newAppServicePlanLocation')]",
       "sku": "[parameters('newAppServicePlanSku')]",
